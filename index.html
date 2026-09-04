@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050816">
+  <meta name="color-scheme" content="dark">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CBTron">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="./icon-192.png">
+  <title>CBTron | Academia del futuro</title>
+  <script>
+    (() => {
+      try {
+        const media = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+        if (media || window.navigator.standalone === true) {
+          document.documentElement.classList.add('is-standalone');
+        }
+      } catch (error) { /* detección opcional */ }
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --void: #03040b;
+      --space: #060914;
+      --panel: rgba(11, 18, 36, .92);
+      --line: rgba(127, 216, 255, .18);
+      --cyan: #5ae9ff;
+      --muted: #9ab0c0;
+      --dim: #6d8292;
+      --green: #65f5ad;
+      --font: Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-width: 320px; min-height: 100%; margin: 0; background: var(--void); }
+    body { color: #f4fbff; font-family: var(--font); }
+    button, input, a { font: inherit; }
+    a { color: inherit; }
+    button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+    .pwa-shell {
+      display: flex; min-height: 100svh; flex-direction: column;
+      background: radial-gradient(circle at 82% 0%, rgba(155,124,255,.16), transparent 32rem),
+        radial-gradient(circle at 8% 100%, rgba(90,233,255,.11), transparent 28rem),
+        linear-gradient(145deg, #03040b 0%, #050916 55%, #02040a 100%);
+    }
+    .pwa-header {
+      display: flex; min-height: 68px; align-items: center; justify-content: space-between; gap: 18px;
+      padding: 10px clamp(16px, 4vw, 56px); border-bottom: 1px solid rgba(255,255,255,.08);
+      background: rgba(3,4,11,.74); backdrop-filter: blur(16px);
+    }
+    .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
+    .brand-mark {
+      display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--cyan);
+      border-radius: 11px; color: var(--cyan); background: #07101d; box-shadow: 0 0 24px rgba(90,233,255,.24);
+      font-weight: 900; letter-spacing: -.08em;
+    }
+    .brand-copy { display: flex; flex-direction: column; }
+    .brand-copy strong { font-size: 16px; letter-spacing: .19em; }
+    .brand-copy small { margin-top: 3px; color: var(--dim); font-size: 8px; letter-spacing: .16em; }
+    .install-panel { display: flex; align-items: center; gap: 12px; }
+    .install-button, .connect-button {
+      min-height: 38px; padding: 0 15px; border: 1px solid rgba(90,233,255,.48); border-radius: 9px;
+      color: #001014; background: var(--cyan); cursor: pointer; font-size: 11px; font-weight: 900; letter-spacing: .08em;
+    }
+    .install-button:hover, .connect-button:hover { background: #8cf4ff; }
+    .install-button[hidden] { display: none; }
+    .install-button.is-installed { display: none; }
+    .pwa-status { max-width: 330px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.35; text-align: right; }
+    .pwa-main { display: flex; min-height: 0; flex: 1; flex-direction: column; padding: 16px; }
+    .backend-panel {
+      display: grid; gap: 10px; max-width: 760px; margin: 0 auto 14px; padding: 16px;
+      border: 1px solid var(--line); border-radius: 14px; background: rgba(8,16,31,.9);
+    }
+    .backend-panel[hidden] { display: none; }
+    .backend-panel h1 { margin: 0; font-size: 17px; letter-spacing: .05em; }
+    .backend-panel p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .backend-form { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
+    .backend-form input {
+      width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid rgba(127,216,255,.25); border-radius: 9px;
+      color: #f4fbff; background: #030916; font-size: 12px;
+    }
+    .backend-status { min-height: 16px; color: var(--green); font-size: 11px; }
+    .app-frame-wrap {
+      position: relative; display: flex; min-height: 0; flex: 1; overflow: hidden; border: 1px solid var(--line);
+      border-radius: 18px; background: var(--panel); box-shadow: 0 24px 80px rgba(0,0,0,.38);
+    }
+    .app-frame { display: block; width: 100%; min-height: max(640px, calc(100svh - 100px)); flex: 1; border: 0; background: var(--space); }
+    .frame-fallback {
+      position: absolute; right: 16px; bottom: 14px; left: 16px; display: flex; align-items: center; justify-content: center;
+      gap: 8px; padding: 9px 12px; color: var(--dim); background: rgba(3,4,11,.78); font-size: 11px; pointer-events: none;
+    }
+    .frame-fallback a { color: var(--cyan); pointer-events: auto; }
+    .pwa-footer { padding: 8px 16px 12px; color: var(--dim); font-size: 9px; letter-spacing: .12em; text-align: center; }
+    html.is-standalone,
+    html.is-standalone body {
+      width: 100%; height: 100%; min-height: 100%; overflow: hidden; background: var(--space);
+    }
+    html.is-standalone .pwa-shell {
+      width: 100%; height: 100vh; height: 100dvh; min-height: 100dvh; overflow: hidden; background: var(--space);
+    }
+    html.is-standalone .pwa-header,
+    html.is-standalone .pwa-footer { display: none; }
+    html.is-standalone .pwa-main {
+      width: 100%; height: 100dvh; min-height: 0; padding: 0;
+    }
+    html.is-standalone .backend-panel {
+      max-width: none; margin: 0; border: 0; border-radius: 0;
+    }
+    html.is-standalone .app-frame-wrap {
+      width: 100%; height: 100%; min-height: 0; border: 0; border-radius: 0;
+      background: var(--space); box-shadow: none;
+    }
+    html.is-standalone .app-frame {
+      width: 100%; height: 100%; min-width: 0; min-height: 0; flex: 1 1 auto;
+    }
+    html.is-standalone .frame-fallback { display: none; }
+    @media (max-width: 720px) {
+      .pwa-header { align-items: flex-start; flex-direction: column; }
+      .install-panel { width: 100%; align-items: stretch; flex-direction: column-reverse; gap: 6px; }
+      .install-button { width: 100%; }
+      .pwa-status { max-width: none; text-align: left; }
+      .pwa-main { padding: 8px; }
+      .backend-form { grid-template-columns: 1fr; }
+      .connect-button { width: 100%; }
+      .app-frame-wrap { border-radius: 12px; }
+      .app-frame { min-height: calc(100svh - 230px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="pwa-shell">
+    <header class="pwa-header">
+      <a class="brand" href="./" aria-label="CBTron, inicio">
+        <span class="brand-mark" aria-hidden="true">CB</span>
+        <span class="brand-copy"><strong>CBTRON</strong><small>ACADEMIA // INSTALADOR SEGURO</small></span>
+      </a>
+      <div class="install-panel" aria-label="Instalación de CBTron">
+        <p id="pwaStatus" class="pwa-status" role="status" aria-live="polite">Preparando CBTron...</p>
+        <button id="installButton" class="install-button" type="button">INSTALAR CBTRON</button>
+      </div>
+    </header>
+
+    <main class="pwa-main">
+      <section id="backendPanel" class="backend-panel" aria-labelledby="backendTitle" hidden>
+        <h1 id="backendTitle">Conecta tu acceso de CBTron</h1>
+        <p>Escribe la dirección publicada que termina en <code>/exec</code>. Se guarda solo en este dispositivo para abrir tu cuenta dentro de la carcasa instalable.</p>
+        <form id="backendForm" class="backend-form" novalidate>
+          <label class="sr-only" for="backendUrl">Dirección publicada</label>
+          <input id="backendUrl" name="backendUrl" type="url" inputmode="url" autocomplete="url" placeholder="https://.../exec" required>
+          <button class="connect-button" type="submit">CONECTAR A CBTRON</button>
+        </form>
+        <div id="backendStatus" class="backend-status" role="status" aria-live="polite"></div>
+      </section>
+      <div class="app-frame-wrap">
+        <iframe id="cbtronApp" class="app-frame" title="Aplicación CBTron" loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        <div class="frame-fallback">Si la aplicación no carga, <a id="directAppLink" href="" target="_blank" rel="noopener">ábrela directamente</a>.</div>
+      </div>
+    </main>
+    <footer class="pwa-footer">CBTRON // APRENDIZAJE ADAPTATIVO // v0.1.22 // SIN DATOS PROTEGIDOS EN CACHÉ</footer>
+  </div>
+
+  <script src="./config.js"></script>
+  <script>
+    (() => {
+      'use strict';
+
+      const STORAGE_KEY = 'cbtron-pwa-backend-url';
+      const state = { deferredPrompt: null, installed: false, registration: null, backendUrl: '' };
+
+      window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        state.deferredPrompt = event;
+        renderInstallAction();
+        setStatus('CBTron está listo para instalarse en este dispositivo.');
+      });
+
+      window.addEventListener('appinstalled', () => {
+        state.installed = true;
+        state.deferredPrompt = null;
+        renderInstallAction();
+        setStatus('CBTron quedó instalado en este dispositivo.');
+      });
+
+      document.addEventListener('DOMContentLoaded', init);
+
+      function init() {
+        state.installed = isStandalone();
+        syncStandaloneMode();
+        const config = window.CBTRON_PWA_CONFIG || {};
+        const input = document.getElementById('backendUrl');
+        const form = document.getElementById('backendForm');
+        if (input) input.value = readBackendUrl(config);
+        if (form) form.addEventListener('submit', handleBackendSubmit);
+        const installButton = document.getElementById('installButton');
+        if (installButton) installButton.addEventListener('click', requestInstall);
+        connectBackend(input ? input.value : readBackendUrl(config));
+        renderInstallAction();
+        registerServiceWorker();
+      }
+
+      function handleBackendSubmit(event) {
+        event.preventDefault();
+        const input = document.getElementById('backendUrl');
+        const normalized = normalizeBackendUrl(input && input.value);
+        if (!normalized) {
+          setBackendStatus('Usa una dirección HTTPS publicada que termine en /exec.', true);
+          return;
+        }
+        try { localStorage.setItem(STORAGE_KEY, normalized); } catch (error) { /* almacenamiento opcional */ }
+        connectBackend(normalized);
+      }
+
+      function connectBackend(value) {
+        const normalized = normalizeBackendUrl(value);
+        state.backendUrl = normalized;
+        const panel = document.getElementById('backendPanel');
+        const frame = document.getElementById('cbtronApp');
+        const directLink = document.getElementById('directAppLink');
+        if (!normalized) {
+          if (panel) panel.hidden = false;
+          if (frame) frame.removeAttribute('src');
+          if (directLink) directLink.removeAttribute('href');
+          setBackendStatus('Pega aquí la dirección publicada para continuar.', false);
+          setStatus('Falta configurar el acceso publicado de CBTron.');
+          return;
+        }
+        if (panel) panel.hidden = true;
+        const appUrl = buildAppUrl(normalized);
+        if (frame) {
+          frame.src = appUrl;
+          frame.addEventListener('load', () => setStatus('CBTron está listo.'), { once: true });
+        }
+        if (directLink) directLink.href = appUrl;
+        setStatus('Cargando CBTron...');
+      }
+
+      function readBackendUrl(config) {
+        const queryValue = new URLSearchParams(window.location.search || '').get('backend')
+          || new URLSearchParams(window.location.search || '').get('cbtron_backend');
+        const candidates = [queryValue, config.gasWebAppUrl, safeStorageGet(STORAGE_KEY)];
+        for (const candidate of candidates) {
+          const normalized = normalizeBackendUrl(candidate);
+          if (normalized) return normalized;
+        }
+        return '';
+      }
+
+      async function requestInstall() {
+        if (!state.deferredPrompt) {
+          setStatus('En iPhone usa Compartir > Añadir a pantalla de inicio; en Chrome abre el menú > Instalar.');
+          return;
+        }
+        const promptEvent = state.deferredPrompt;
+        state.deferredPrompt = null;
+        try {
+          await promptEvent.prompt();
+          const choice = await promptEvent.userChoice;
+          setStatus(choice && choice.outcome === 'accepted'
+            ? 'Instalación aceptada. Busca CBTron en tu pantalla de inicio.'
+            : 'Puedes instalar CBTron después desde el menú del navegador.');
+        } catch (error) {
+          setStatus('La instalación se realiza desde el menú del navegador.');
+        }
+        renderInstallAction();
+      }
+
+      function registerServiceWorker() {
+        if (state.installed) return;
+        if (!('serviceWorker' in navigator)) {
+          setStatus('El navegador no admite instalación automática; usa el menú para añadir CBTron.');
+          return;
+        }
+        if (!isSecureOrigin()) {
+          setStatus('La instalación requiere HTTPS o localhost.');
+          return;
+        }
+        const version = String((window.CBTRON_PWA_CONFIG || {}).version || '0.1.22');
+        navigator.serviceWorker.register('./sw.js?v=' + encodeURIComponent(version), {
+          scope: './', updateViaCache: 'none'
+        }).then((registration) => {
+          state.registration = registration;
+          registration.addEventListener('updatefound', () => {
+            const worker = registration.installing;
+            if (!worker) return;
+            worker.addEventListener('statechange', () => {
+              if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                setStatus('Hay una actualización lista; recarga CBTron para aplicarla.');
+              }
+            });
+          });
+        }).catch(() => setStatus('La instalación se realiza desde el menú del navegador.'));
+      }
+
+      function renderInstallAction() {
+        const button = document.getElementById('installButton');
+        if (!button) return;
+        button.classList.toggle('is-installed', state.installed);
+        button.disabled = state.installed;
+      }
+
+      function buildAppUrl(value) {
+        const normalized = normalizeBackendUrl(value);
+        if (!normalized) return '';
+        const url = new URL(normalized);
+        url.searchParams.set('pwa', 'launch');
+        url.searchParams.set('cbtron_embed', '1');
+        return url.toString();
+      }
+
+      function normalizeBackendUrl(value) {
+        const candidate = String(value || '').trim();
+        if (!candidate || /["'<>]/.test(candidate)) return '';
+        try {
+          const url = new URL(candidate);
+          if (url.protocol !== 'https:') return '';
+          if (url.hostname.toLowerCase() !== 'script.google.com') return '';
+          if (!/\/macros\/s\/[^/]+\/exec\/?$/i.test(url.pathname)) return '';
+          url.hash = '';
+          return url.toString();
+        } catch (error) { return ''; }
+      }
+
+      function safeStorageGet(key) {
+        try { return window.localStorage.getItem(key) || ''; } catch (error) { return ''; }
+      }
+
+      function isStandalone() {
+        const media = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+        return Boolean(media || window.navigator.standalone === true);
+      }
+
+      function syncStandaloneMode() {
+        document.documentElement.classList.toggle('is-standalone', isStandalone());
+      }
+
+      function isSecureOrigin() {
+        return window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      }
+
+      function setStatus(message) {
+        const status = document.getElementById('pwaStatus');
+        if (status && message) status.textContent = message;
+      }
+
+      function setBackendStatus(message, isError) {
+        const status = document.getElementById('backendStatus');
+        if (status) { status.textContent = message || ''; status.style.color = isError ? '#ff7394' : ''; }
+      }
+    })();
+  </script>
+</body>
+</html>
