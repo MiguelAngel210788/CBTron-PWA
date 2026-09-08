@@ -3,6 +3,6 @@
  * y la guardará únicamente en este dispositivo.
  */
 window.CBTRON_PWA_CONFIG = Object.freeze({
-  version: '0.1.23',
+  version: '0.1.24',
   gasWebAppUrl: ''
 });

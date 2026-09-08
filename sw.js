@@ -1,6 +1,6 @@
 'use strict';
 
-const CBTRON_PWA_CACHE = 'cbtron-pwa-0.1.23';
+const CBTRON_PWA_CACHE = 'cbtron-pwa-0.1.24';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting());
