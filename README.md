@@ -2,6 +2,8 @@
 
 Distribución pública de la carcasa instalable de CBTron.
 
+La carcasa es un contenedor estable y no replica la versión de la aplicación. La versión real se muestra dentro de la Web App servida por Google Apps Script; un cambio de versión de CBTron no requiere modificar este repositorio.
+
 Este repositorio contiene únicamente los archivos estáticos necesarios para instalar la aplicación:
 - `index.html`
 - `config.js`

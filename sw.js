@@ -1,6 +1,6 @@
 'use strict';
 
-const CBTRON_PWA_CACHE = 'cbtron-pwa-0.1.24';
+const CBTRON_PWA_LEGACY_CACHE_PREFIX = 'cbtron-pwa-';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting());
@@ -11,7 +11,7 @@ self.addEventListener('activate', (event) => {
     caches.keys()
       .then((keys) => Promise.all(
         keys
-          .filter((key) => key.indexOf('cbtron-pwa-') === 0 && key !== CBTRON_PWA_CACHE)
+          .filter((key) => key.indexOf(CBTRON_PWA_LEGACY_CACHE_PREFIX) === 0)
           .map((key) => caches.delete(key))
       ))
       .then(() => self.clients.claim())
