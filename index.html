@@ -351,6 +351,88 @@
         const status = document.getElementById('backendStatus');
         if (status) { status.textContent = message || ''; status.style.color = isError ? '#ff7394' : ''; }
       }
+
+      /* Puente de voz. El marco propio de Apps Script no concede el micrófono, pero esta carcasa es la
+         página principal: reconoce la voz aquí y devuelve solo el texto escuchado a CBTron. Solo atiende
+         a marcos de Apps Script que viven dentro de su propio iframe; nunca graba ni guarda audio. */
+      // Apps Script sirve la aplicación desde https://n-<id>-0lu-script.googleusercontent.com.
+      const APP_ORIGIN = /^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/i;
+      const speech = { recognizer: null, requestId: '', timer: 0 };
+
+      function isAppDescendant(source) {
+        const frame = document.getElementById('cbtronApp');
+        if (!frame || !frame.contentWindow || !source) return false;
+        const stack = [{ win: frame.contentWindow, depth: 0 }];
+        while (stack.length) {
+          const item = stack.pop();
+          if (item.win === source) return true;
+          if (item.depth >= 4) continue;
+          let count = 0;
+          try { count = item.win.length; } catch (error) { count = 0; }
+          for (let index = 0; index < count && index < 10; index++) {
+            try { stack.push({ win: item.win[index], depth: item.depth + 1 }); } catch (error) { /* marco inaccesible */ }
+          }
+        }
+        return false;
+      }
+
+      function speechReply(target, origin, data) {
+        try { target.postMessage(Object.assign({ source: 'cbtron-pwa' }, data), origin); } catch (error) { /* marco cerrado */ }
+      }
+
+      function stopSpeech() {
+        clearTimeout(speech.timer);
+        const recognizer = speech.recognizer;
+        speech.recognizer = null;
+        speech.requestId = '';
+        if (recognizer) { try { recognizer.abort(); } catch (error) { /* ya detenido */ } }
+      }
+
+      function startSpeech(event, Recognition) {
+        const requestId = String(event.data.requestId || '');
+        if (!/^[\w-]{8,80}$/.test(requestId)) return;
+        stopSpeech();
+        const reply = payload => speechReply(event.source, event.origin, Object.assign({ type: 'speech-result', requestId }, payload));
+        if (!Recognition || document.hidden) { reply({ ok: false, error: 'unsupported' }); return; }
+        let recognizer;
+        try { recognizer = new Recognition(); } catch (error) { reply({ ok: false, error: 'unsupported' }); return; }
+        const finish = payload => {
+          if (speech.requestId !== requestId) return;
+          clearTimeout(speech.timer);
+          speech.requestId = '';
+          speech.recognizer = null;
+          reply(payload);
+        };
+        speech.recognizer = recognizer;
+        speech.requestId = requestId;
+        recognizer.lang = 'en-US';
+        recognizer.interimResults = false;
+        recognizer.maxAlternatives = 5;
+        recognizer.continuous = false;
+        recognizer.onresult = result => {
+          const alternatives = result.results[0];
+          const transcripts = [];
+          for (let index = 0; index < alternatives.length && index < 5; index++) {
+            const text = String(alternatives[index].transcript || '').trim().slice(0, 80);
+            if (text) transcripts.push(text);
+          }
+          finish({ ok: true, transcripts });
+        };
+        recognizer.onerror = error => finish({ ok: false, error: String(error.error || 'error').slice(0, 40) });
+        recognizer.onend = () => finish({ ok: false, error: 'no-speech' });
+        speech.timer = setTimeout(() => { try { recognizer.abort(); } catch (error) { /* ya detenido */ } finish({ ok: false, error: 'timeout' }); }, 12000);
+        try { recognizer.start(); } catch (error) { finish({ ok: false, error: 'start-failed' }); }
+      }
+
+      window.addEventListener('message', (event) => {
+        const data = event.data;
+        if (window.top !== window || !data || data.source !== 'cbtron-app' || !APP_ORIGIN.test(event.origin) || !isAppDescendant(event.source)) return;
+        const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (data.type === 'speech-hello') speechReply(event.source, event.origin, { type: 'speech-ready', supported: Boolean(Recognition) });
+        else if (data.type === 'speech-start') startSpeech(event, Recognition);
+        else if (data.type === 'speech-stop') stopSpeech();
+      });
+      document.addEventListener('visibilitychange', () => { if (document.hidden) stopSpeech(); });
     })();
   </script>
 </body>
